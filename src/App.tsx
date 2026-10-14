@@ -156,7 +156,7 @@ const MainAppLayout: React.FC = () => {
 };
 
 // URL API Backend Express
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://backend-prima-k3-production.up.railway.app/api";
 
 function App() {
   return (
@@ -423,4 +423,4 @@ function App() {
   );
 }
 
-export default App;3
+export default App;
