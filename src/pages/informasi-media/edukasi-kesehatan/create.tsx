@@ -24,7 +24,7 @@ export const EdukasiKesehatanCreate: React.FC = () => {
   const { token } = useToken();
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const { mutate, isPending: isLoading } = useCreate();
+  const { mutate, isLoading } = useCreate();
 
   const handleFinish = (values: any) => {
     const payload = {
