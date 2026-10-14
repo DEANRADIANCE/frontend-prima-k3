@@ -8,6 +8,7 @@ import {
   useNotificationProvider,
 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
+import simpleRestDataProvider from "@refinedev/simple-rest";
 
 import { App as AntdApp, Layout, theme, Grid } from "antd";
 import {
@@ -37,7 +38,6 @@ import routerProvider, {
 
 import { LoginPage } from "./pages/login";
 import { authProvider } from "./providers/auth";
-import { dataProvider } from "./providers/data";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 
 // Komponen Layout Global
@@ -155,6 +155,9 @@ const MainAppLayout: React.FC = () => {
   );
 };
 
+// URL API Backend Express
+const API_URL = "http://localhost:5000/api";
+
 function App() {
   return (
     <BrowserRouter>
@@ -163,7 +166,7 @@ function App() {
           <AntdApp>
             <DevtoolsProvider>
               <Refine
-                dataProvider={dataProvider}
+                dataProvider={simpleRestDataProvider(API_URL)}
                 authProvider={authProvider}
                 notificationProvider={useNotificationProvider}
                 routerProvider={routerProvider}
@@ -185,7 +188,7 @@ function App() {
                     },
                   },
                   {
-                    name: "obat",
+                    name: "medicines",
                     list: "/layanan-kesehatan/farmasi",
                     meta: {
                       label: "Layanan Farmasi",
@@ -193,7 +196,7 @@ function App() {
                     },
                   },
                   {
-                    name: "konseling",
+                    name: "bookings",
                     list: "/layanan-kesehatan/konseling",
                     meta: {
                       label: "Layanan Konseling Psikolog",
@@ -420,4 +423,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;3
