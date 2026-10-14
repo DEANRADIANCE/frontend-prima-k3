@@ -35,7 +35,7 @@ export const DashboardPage: React.FC = () => {
     {
       id: 1,
       // title: "Pemeriksaan Kesehatan Berkala (MCU) Pegawai ANRI 2026",
-       title: "Pemeriksaan Kesehatan Berkala (MCU)",
+       title: "Pemeriksaan Kesehatan Berkala (MCU) Pegawai ANRI 2026",
       subtitle:
         "Tingkatkan kebugaran kerja dengan skrining kesehatan menyeluruh: tes darah rutin, fungsi organ, dan rekam jantung EKG.",
       tag: "Program K3 Unggulan",
