@@ -24,7 +24,7 @@ export const EdukasiKesehatanCreate: React.FC = () => {
   const { token } = useToken();
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const { mutate, isLoading } = useCreate();
+  const { mutate, mutation } = useCreate();
 
   const handleFinish = (values: any) => {
     const payload = {
@@ -138,7 +138,7 @@ export const EdukasiKesehatanCreate: React.FC = () => {
               size="large"
               htmlType="submit"
               icon={<SaveOutlined />}
-              loading={isLoading}
+              loading={mutation.isPending}
               style={{ backgroundColor: token.colorPrimary, borderRadius: 8, fontWeight: 600 }}
             >
               Simpan Artikel
