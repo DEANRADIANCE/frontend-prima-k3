@@ -162,6 +162,7 @@ export const FarmasiPage: React.FC = () => {
         {
           resource: "medicines",
           id: selectedMedicine.id,
+          meta: { method: "put" },
           values: {
             name: values.name.trim(),
             stock: values.stock,
