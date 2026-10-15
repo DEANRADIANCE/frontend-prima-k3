@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useCreate, useDelete, useList } from "@refinedev/core";
+import { useCreate, useDelete, useList, useUpdate } from "@refinedev/core";
 import {
   Button,
   Card,
@@ -16,21 +16,45 @@ import {
   Switch,
   Tag,
   Popconfirm,
+  Upload,
+  Image,
 } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import type { UploadFile } from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { API_URL } from "../../../providers/constants";
+
+interface Medicine {
+  id: string | number;
+  name: string;
+  category: string;
+  stock: number;
+  is_available: boolean;
+  image_url?: string | null;
+}
+
+interface EditMedicineValues {
+  name: string;
+  stock: number;
+}
 
 export const FarmasiPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
   const [searchText, setSearchText] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [deletingMedicineId, setDeletingMedicineId] = useState<string | number | null>(null);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [editImageFiles, setEditImageFiles] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
   const { mutate: createMedicine } = useCreate();
+  const { mutate: updateMedicine } = useUpdate();
   const { mutate: deleteMedicine } = useDelete();
 
   // Menarik data langsung dari Backend Express (GET /api/medicines)
-  const { result, query } = useList({
+  const { result, query } = useList<Medicine>({
     resource: "medicines",
   });
 
@@ -38,7 +62,7 @@ export const FarmasiPage: React.FC = () => {
   const medicines = result.data;
 
   // Filter kategori & search
-  const filteredMedicines = medicines.filter((item: any) => {
+  const filteredMedicines = medicines.filter((item) => {
     const matchCategory =
       selectedCategory === "Semua" || item.category === selectedCategory;
     const matchSearch = item.name
@@ -85,6 +109,8 @@ export const FarmasiPage: React.FC = () => {
       {
         onSuccess: () => {
           setDeletingMedicineId(null);
+          setIsEditModalOpen(false);
+          setSelectedMedicine(null);
           message.success("Obat berhasil dihapus.");
         },
         onError: (error) => {
@@ -93,6 +119,73 @@ export const FarmasiPage: React.FC = () => {
         },
       },
     );
+  };
+
+  const openEditModal = (medicine: Medicine) => {
+    setSelectedMedicine(medicine);
+    setEditImageFiles([]);
+    editForm.setFieldsValue({ name: medicine.name, stock: medicine.stock });
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedMedicine(null);
+    setEditImageFiles([]);
+    editForm.resetFields();
+  };
+
+  const handleUpdateMedicine = async (values: EditMedicineValues) => {
+    if (!selectedMedicine) return;
+
+    setIsUpdating(true);
+    try {
+      const imageFile = editImageFiles[0]?.originFileObj;
+      let imageUrl = selectedMedicine.image_url;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        const response = await fetch(`${API_URL}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        const result: { url?: string; error?: string } = await response.json();
+
+        if (!response.ok || !result.url) {
+          throw new Error(result.error || "Gagal mengunggah gambar obat.");
+        }
+        imageUrl = result.url;
+      }
+
+      updateMedicine(
+        {
+          resource: "medicines",
+          id: selectedMedicine.id,
+          values: {
+            name: values.name.trim(),
+            stock: values.stock,
+            image_url: imageUrl || null,
+          },
+        },
+        {
+          onSuccess: () => {
+            setIsUpdating(false);
+            message.success("Data obat berhasil diperbarui.");
+            closeEditModal();
+          },
+          onError: (error) => {
+            setIsUpdating(false);
+            message.error(`Gagal memperbarui obat: ${error.message}`);
+          },
+        },
+      );
+    } catch (error) {
+      setIsUpdating(false);
+      message.error(
+        `Gagal memperbarui obat: ${error instanceof Error ? error.message : "Terjadi kesalahan."}`,
+      );
+    }
   };
 
   return (
@@ -160,7 +253,7 @@ export const FarmasiPage: React.FC = () => {
 
       {/* Grid Kartu Obat */}
       <Row gutter={[16, 16]}>
-        {filteredMedicines.map((item: any) => {
+        {filteredMedicines.map((item) => {
           const stock = Number(item.stock ?? 0);
           const isAvailable = item.is_available && stock > 0;
           const availabilityLabel = !item.is_available
@@ -181,24 +274,14 @@ export const FarmasiPage: React.FC = () => {
                   />
                 }
                 actions={[
-                  <Popconfirm
-                    key="delete"
-                    title="Hapus obat ini?"
-                    description="Data akan dihapus permanen. Tindakan ini tidak bisa dibatalkan."
-                    okText="Hapus"
-                    cancelText="Batal"
-                    okButtonProps={{ danger: true, loading: deletingMedicineId === item.id }}
-                    onConfirm={() => handleDeleteMedicine(item.id)}
+                  <Button
+                    key="edit"
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => openEditModal(item)}
                   >
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      loading={deletingMedicineId === item.id}
-                    >
-                      Hapus
-                    </Button>
-                  </Popconfirm>,
+                    Edit
+                  </Button>,
                 ]}
               >
                 <Card.Meta
@@ -282,6 +365,85 @@ export const FarmasiPage: React.FC = () => {
             <Button type="primary" htmlType="submit" loading={isCreating}>
               Simpan Obat
             </Button>
+          </div>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Edit Obat"
+        open={isEditModalOpen}
+        onCancel={closeEditModal}
+        footer={null}
+        destroyOnClose
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleUpdateMedicine}>
+          <Form.Item
+            label="Nama Obat"
+            name="name"
+            rules={[{ required: true, whitespace: true, message: "Nama obat wajib diisi." }]}
+          >
+            <Input maxLength={150} />
+          </Form.Item>
+          <Form.Item
+            label="Stok"
+            name="stock"
+            rules={[{ required: true, message: "Stok wajib diisi." }]}
+          >
+            <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item label="Gambar Obat">
+            {selectedMedicine?.image_url && (
+              <Image
+                src={selectedMedicine.image_url}
+                alt={selectedMedicine.name}
+                width={120}
+                style={{ display: "block", marginBottom: 8, objectFit: "cover" }}
+              />
+            )}
+            <Upload
+              accept="image/*"
+              maxCount={1}
+              fileList={editImageFiles}
+              beforeUpload={(file) => {
+                if (!file.type.startsWith("image/")) {
+                  message.error("File harus berupa gambar.");
+                  return Upload.LIST_IGNORE;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                  message.error("Ukuran gambar maksimal 5 MB.");
+                  return Upload.LIST_IGNORE;
+                }
+                return false;
+              }}
+              onChange={({ fileList }) => setEditImageFiles(fileList.slice(-1))}
+              onRemove={() => setEditImageFiles([])}
+            >
+              <Button icon={<UploadOutlined />}>Pilih Gambar Baru</Button>
+            </Upload>
+          </Form.Item>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <Popconfirm
+              title="Hapus obat ini?"
+              description="Data akan dihapus permanen. Tindakan ini tidak bisa dibatalkan."
+              okText="Hapus"
+              cancelText="Batal"
+              okButtonProps={{ danger: true, loading: deletingMedicineId === selectedMedicine?.id }}
+              onConfirm={() => selectedMedicine && handleDeleteMedicine(selectedMedicine.id)}
+            >
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                loading={deletingMedicineId === selectedMedicine?.id}
+              >
+                Hapus Obat
+              </Button>
+            </Popconfirm>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <Button onClick={closeEditModal}>Batal</Button>
+              <Button type="primary" htmlType="submit" loading={isUpdating}>
+                Simpan Perubahan
+              </Button>
+            </div>
           </div>
         </Form>
       </Modal>

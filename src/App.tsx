@@ -38,6 +38,7 @@ import routerProvider, {
 
 import { LoginPage } from "./pages/login";
 import { authProvider } from "./providers/auth";
+import { API_URL } from "./providers/constants";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 
 // Komponen Layout Global
@@ -154,9 +155,6 @@ const MainAppLayout: React.FC = () => {
     </Layout>
   );
 };
-
-// URL API Backend Express
-const API_URL = "https://backend-prima-k3-production.up.railway.app/api";
 
 function App() {
   return (
