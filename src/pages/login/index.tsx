@@ -39,15 +39,24 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = (values: { username?: string; password?: string }) => {
     setFocusedField("submitting");
     setErrorMessage(null);
+    setIsSuccess(false);
 
     login(values, {
-      onSuccess: () => {
-        setIsSuccess(true);
-      },
-      onError: (error: any) => {
+      onSuccess: (result) => {
+        if (result.success) {
+          setIsSuccess(true);
+          return;
+        }
+
         setFocusedField("none");
         setErrorMessage(
-          error?.message || "Kombinasi akun salah. Silakan gunakan admin / admin."
+          result.error?.message || "Kombinasi akun salah. Silakan gunakan admin / admin.",
+        );
+      },
+      onError: (error) => {
+        setFocusedField("none");
+        setErrorMessage(
+          error.message || "Kombinasi akun salah. Silakan gunakan admin / admin.",
         );
       },
     });
